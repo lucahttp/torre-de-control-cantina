@@ -1,0 +1,14 @@
+{
+  "version": "1.0",
+  "appId": "2d54b7ab-bf46-4ab3-bf32-7f37495f4df0",
+  "appDisplayName": "Cantina Graph OS",
+  "region": "prod",
+  "environmentId": "95b4f72c-7cb4-e370-a816-62d067e2de10",
+  "description": " ",
+  "buildPath": "./dist",
+  "buildEntryPoint": "index.html",
+  "localAppUrl": "http://localhost:3000",
+  "logoPath": "Default",
+  "connectionReferences": {},
+  "databaseReferences": {}
+}
