@@ -14,7 +14,7 @@ export interface User {
   role: UserRole;
 }
 
-// ---------- Products & Recipes ----------
+// ---------- Products & Recipes (v2: todo es un Producto, BOM multi-nivel) ----------
 
 export type Categoria =
   | "Sandwiches"
@@ -26,28 +26,49 @@ export type Categoria =
   | "Snacks_Salados"
   | "Otros";
 
+/**
+ * Unidad base del producto. Define cómo se mide su stock y cómo se interpretan
+ * las cantidades en recetas y ventas. La conversión entre unidades (kg↔g, l↔ml)
+ * se hace al construir la receta: si el producto está en "kg", una receta que
+ * pide 200g debe escribirse como 0.2 (interpretado en la unidad base).
+ */
+export type UnidadBase = "g" | "kg" | "ml" | "l" | "unidad" | "botella" | "vaso" | "porcion" | "paquete";
+
+/**
+ * Categoría del Totem (tc_categoria). 100000004 = "Insumo" es nueva en v2 y
+ * marca productos que son materia prima / envase y no se venden al alumno.
+ */
+export type TcCategoria = 100000000 | 100000001 | 100000002 | 100000003 | 100000004;
+
+export const TC_CATEGORIA_LABEL: Record<TcCategoria, string> = {
+  100000000: "Bebidas",
+  100000001: "Snacks",
+  100000002: "Comida",
+  100000003: "Postres",
+  100000004: "Insumo",
+};
+
 export interface Product {
   id: ID;
   nombre: string;
-  categoria: Categoria;
+  categoria: Categoria; // 8 valores del UI admin
   precioVentaDefault: number; // ARS
   activo: boolean;
-}
-
-export interface Ingredient {
-  id: ID;
-  nombre: string;
-  unidadBase: "g" | "ml" | "unidad";
-  stockTotal: number; // computed
-  costoPromedio: number; // computed
+  unidadBase: UnidadBase; // para stock y conversiones
+  // SYNC desde el totem (opcional; un Product puede ser admin-only)
+  tcProductoId?: string; // GUID de tc_producto
+  tcCategoria?: TcCategoria; // categoría de tc_producto
+  // UI hint
+  esInsumoBase?: boolean; // si true, este producto es hoja del BOM (no se "fabrica")
 }
 
 export interface RecipeItem {
   id: ID;
-  productoId: ID;
-  ingredienteId: ID;
-  cantidad: number; // per 1 unit of product, in unidadBase
-  mermaPct: number; // 0..1
+  productoId: ID; // padre: el producto que se arma
+  componenteId: ID; // hijo: otro Product (insumo, sub-producto o fraccionado)
+  cantidad: number; // unidades de `componente` por 1 unidad de `producto`
+  mermaPct: number; // 0..1, solo aplica cuando el componente se "gasta" (no en fraccionar)
+  nota?: string;
 }
 
 // ---------- Batches & Inventory ----------
@@ -59,11 +80,11 @@ export type FuentePrecio = {
 
 export interface Batch {
   id: ID;
-  ingredienteId: ID;
+  productoId: ID; // FK a Product (v2: no más FK a Ingredient)
   proveedor: string;
   fechaCompraReal: ISODate;
   costoTotal: number; // ARS
-  costoUnidadBase: number; // ARS per unidadBase
+  costoUnidadBase: number; // ARS per unidadBase del producto
   cantidadInicial: number; // in unidadBase
   stockRestante: number; // in unidadBase
   vencimiento?: ISODate;
@@ -214,7 +235,6 @@ export interface AppNotification {
 export interface AppData {
   users: User[];
   products: Product[];
-  ingredients: Ingredient[];
   recipeItems: RecipeItem[];
   batches: Batch[];
   movements: InventoryMovement[];

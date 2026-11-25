@@ -97,7 +97,7 @@ function NewSaleInline({ onClose }: { onClose: () => void }) {
 
     // FIFO allocation
     const next = structuredClone(data);
-    const required = requiredQtyForSaleItem(saleItem, next.recipeItems);
+    const required = requiredQtyForSaleItem(saleItem, next.products, next.recipeItems);
     let hasMissing = false;
     for (const [ingId, qty] of required) {
       const res = allocateFIFO(ingId, qty, next.batches, { saleId, saleItemId: siId });
@@ -153,7 +153,7 @@ function NewSaleInline({ onClose }: { onClose: () => void }) {
 function NewBatchInline({ onClose }: { onClose: () => void }) {
   const data = useApp((s) => s.data);
   const importData = useApp((s) => s.importData);
-  const [ingredienteId, setIngredienteId] = useState<string>(data.ingredients[0]?.id ?? "");
+  const [ingredienteId, setIngredienteId] = useState<string>(data.products.filter((p) => p.esInsumoBase)[0]?.id ?? "");
   const [proveedor, setProveedor] = useState("Coto");
   const [cantidad, setCantidad] = useState(1000);
   const [costo, setCosto] = useState(1000);
@@ -161,12 +161,12 @@ function NewBatchInline({ onClose }: { onClose: () => void }) {
 
   const submit = () => {
     const id = `b_${Date.now()}`;
-    const ing = data.ingredients.find((i) => i.id === ingredienteId);
+    const ing = data.products.filter((p) => p.esInsumoBase).find((i) => i.id === ingredienteId);
     if (!ing) return;
     const next = structuredClone(data);
     next.batches.push({
       id,
-      ingredienteId,
+      productoId: ingredienteId,
       proveedor,
       fechaCompraReal: new Date().toISOString().slice(0, 10),
       costoTotal: costo,
@@ -184,7 +184,7 @@ function NewBatchInline({ onClose }: { onClose: () => void }) {
       <div style={{ fontWeight: 600, marginBottom: 6 }}>Nuevo lote (compra)</div>
       <label style={label}>Insumo</label>
       <select style={input} value={ingredienteId} onChange={(e) => setIngredienteId(e.target.value)}>
-        {data.ingredients.map((i) => <option key={i.id} value={i.id}>{i.nombre}</option>)}
+        {data.products.filter((p) => p.esInsumoBase).map((i) => <option key={i.id} value={i.id}>{i.nombre}</option>)}
       </select>
       <label style={label}>Proveedor</label>
       <input style={input} value={proveedor} onChange={(e) => setProveedor(e.target.value)} />

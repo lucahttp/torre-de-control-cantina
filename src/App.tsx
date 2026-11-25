@@ -5,13 +5,15 @@ import { DetailPanel } from "./components/DetailPanel";
 import { QuickActions } from "./components/QuickActions";
 import { IOPanel } from "./components/IOPanel";
 import { ForecastPanel } from "./components/ForecastPanel";
+import { CatalogPanel } from "./components/CatalogPanel";
 import { useApp } from "./store/useApp";
 
-const MODES: { id: "operacion" | "trazabilidad" | "finanzas" | "forecast"; label: string }[] = [
+const MODES: { id: "operacion" | "trazabilidad" | "finanzas" | "forecast" | "catalogo"; label: string }[] = [
   { id: "operacion", label: "Operación" },
   { id: "trazabilidad", label: "Trazabilidad" },
   { id: "finanzas", label: "Finanzas" },
   { id: "forecast", label: "Forecast / Outlook" },
+  { id: "catalogo", label: "Catálogo" },
 ];
 
 function App() {
@@ -53,9 +55,15 @@ function App() {
       </header>
 
       <div className="canvas-area">
-        <Canvas />
-        {viewMode === "forecast" && <ForecastPanel />}
-        <DetailPanel />
+        {viewMode === "catalogo" ? (
+          <CatalogPanel />
+        ) : (
+          <>
+            <Canvas />
+            {viewMode === "forecast" && <ForecastPanel />}
+            <DetailPanel />
+          </>
+        )}
 
         {showNotif && (
           <div className="notif-list">

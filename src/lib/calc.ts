@@ -18,6 +18,70 @@ export const fmtPct = (n: number) => `${(n * 100).toFixed(1)}%`;
 
 export const fmtInt = (n: number) => Math.round(n).toLocaleString("es-AR");
 
+// ---------- Product costing (v2: multi-level BOM) ----------
+
+/**
+ * Costo promedio de un producto. En v2 un producto es leaf si no tiene receta.
+ * Si es leaf, devolvemos su costoPromedio. Si no, sumamos recursivamente.
+ * El costoPromedio de un producto leaf se calcula como Σ(lote.costototal) /
+ * Σ(lote.cantidadinicial) sobre sus batches — esa fórmula vive en la UI,
+ * acá recibimos el mapa.
+ */
+export function productCost(
+  productId: string,
+  recipeItems: { productoId: string; componenteId: string; cantidad: number; mermaPct: number }[],
+  productCostById: Map<string, number>,
+  _visited: Set<string> = new Set()
+): number {
+  if (_visited.has(productId)) return 0;
+  const visited = new Set(_visited);
+  visited.add(productId);
+
+  const recipe = recipeItems.filter((r) => r.productoId === productId);
+  if (recipe.length === 0) {
+    return productCostById.get(productId) ?? 0;
+  }
+  return recipe.reduce((s, r) => {
+    const childCost = productCost(r.componenteId, recipeItems, productCostById, visited);
+    return s + r.cantidad * childCost * (1 + (r.mermaPct || 0));
+  }, 0);
+}
+
+export function productMargin(
+  productId: string,
+  precioVentaDefault: number,
+  recipeItems: Parameters<typeof productCost>[1],
+  productCostById: Map<string, number>
+): { cost: number; margin: number; marginPct: number } {
+  const cost = productCost(productId, recipeItems, productCostById);
+  const margin = precioVentaDefault - cost;
+  const marginPct = precioVentaDefault > 0 ? margin / precioVentaDefault : 0;
+  return { cost, margin, marginPct };
+}
+
+/**
+ * Helper: dado un array de productos y sus batches, devuelve un Map
+ * productId -> costoPromedio (para los leaf del BOM).
+ */
+export function computeProductCostMap(
+  products: { id: string }[],
+  batches: { productoId: string; costoTotal: number; cantidadInicial: number }[]
+): Map<string, number> {
+  const totals = new Map<string, { costo: number; qty: number }>();
+  for (const b of batches) {
+    const acc = totals.get(b.productoId) ?? { costo: 0, qty: 0 };
+    acc.costo += b.costoTotal;
+    acc.qty += b.cantidadInicial;
+    totals.set(b.productoId, acc);
+  }
+  const out = new Map<string, number>();
+  for (const p of products) {
+    const t = totals.get(p.id);
+    out.set(p.id, t && t.qty > 0 ? t.costo / t.qty : 0);
+  }
+  return out;
+}
+
 // ---------- Sales aggregations ----------
 
 export function totalSales(sales: Sale[]): number {

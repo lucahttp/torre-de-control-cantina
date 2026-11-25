@@ -121,10 +121,10 @@ function Body({ type, refId }: { type: EntityNodeData["type"]; refId: string }) 
     case "batch": {
       const b = data.batches.find((x) => x.id === refId);
       if (!b) return <div>batch not found</div>;
-      const ing = data.ingredients.find((i) => i.id === b.ingredienteId);
+      const ing = data.products.filter((p) => p.esInsumoBase).find((i) => i.id === b.productoId);
       return (
         <div>
-          <div style={{ fontWeight: 600, fontSize: 13 }}>{ing?.nombre ?? b.ingredienteId}</div>
+          <div style={{ fontWeight: 600, fontSize: 13 }}>{ing?.nombre ?? b.productoId}</div>
           <div style={{ fontSize: 10, color: "#9ca3af" }}>
             {b.proveedor} · {b.fechaCompraReal}
           </div>
@@ -136,9 +136,9 @@ function Body({ type, refId }: { type: EntityNodeData["type"]; refId: string }) 
       );
     }
     case "ingredient": {
-      const i = data.ingredients.find((x) => x.id === refId);
+      const i = data.products.filter((p) => p.esInsumoBase).find((x) => x.id === refId);
       if (!i) return <div>ingredient not found</div>;
-      const batches = data.batches.filter((b) => b.ingredienteId === i.id);
+      const batches = data.batches.filter((b) => b.productoId === i.id);
       const stock = batches.reduce((s, b) => s + b.stockRestante, 0);
       const avgCost = batches.length
         ? batches.reduce((s, b) => s + b.stockRestante * b.costoUnidadBase, 0) / Math.max(1, stock)
@@ -167,7 +167,7 @@ function Body({ type, refId }: { type: EntityNodeData["type"]; refId: string }) 
             {items
               .slice(0, 3)
               .map((it) => {
-                const ing = data.ingredients.find((i) => i.id === it.ingredienteId);
+                const ing = data.products.filter((p) => p.esInsumoBase).find((i) => i.id === it.componenteId);
                 return `${ing?.nombre ?? "?"} ${Math.round(it.cantidad)}`;
               })
               .join(" · ")}
@@ -206,7 +206,7 @@ function Body({ type, refId }: { type: EntityNodeData["type"]; refId: string }) 
     case "allocation": {
       const a = data.allocations.find((x) => x.id === refId);
       if (!a) return <div>allocation not found</div>;
-      const ing = data.ingredients.find((i) => i.id === a.ingredienteId);
+      const ing = data.products.filter((p) => p.esInsumoBase).find((i) => i.id === a.ingredienteId);
       const b = data.batches.find((x) => x.id === a.batchId);
       return (
         <div>

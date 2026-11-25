@@ -4,24 +4,25 @@
 
 - Path: `~/cantinacuba/torre-de-control/cantina-graph-os/`
 - Type: Power Apps Code App (Vite + React 19 + TypeScript + @xyflow/react v12 + Zustand)
-- Status: **Local build green + CLI auth verified. Push BLOCKED at tenant level (Code Apps not allowed).**
+- Status: **🟢 LIVE in Power Apps. All 4 modes render. 70 React Flow nodes + headers + panels working.**
 - Data persistence: localStorage (key `cantina-graph-os`) via `zustand/middleware` `persist`.
+- Live URL: `https://apps.powerapps.com/play/e/95b4f72c-7cb4-e370-a816-62d067e2de10/app/2d54b7ab-bf46-4ab3-bf32-7f37495f4df0?tenantId=ecccbc9d-89ff-424b-9f3e-4a6516fb60eb`
 
 ## Environment
 
 - Environment ID: `95b4f72c-7cb4-e370-a816-62d067e2de10`
 - Tenant: `ecccbc9d-89ff-424b-9f3e-4a6516fb60eb`
-- Code App ID created by CLI: `3f6130de-f1b0-4664-8a85-d16d4d383092`
-- Note: The make.powerapps.com URL the user shared is for a Canvas App (`83b8bcaf-...`), NOT the Code App. The Code App lives at `apps.powerapps.com/play/e/{env}/app/{codeAppId}` once it's pushed.
+- Code App ID (created by CLI on second push): `2d54b7ab-bf46-4ab3-bf32-7f37495f4df0`
+- Iframe runtime URL: `https://95b4f72c7cb4e370a81662d067e2de.10.environment.api.powerplatformusercontent.com/powerapps/appruntime/{appId}/.../index.html`
 
 ## Completed Steps
 
 - [x] Step 1: Prerequisites (Node v24.15.0, Git)
 - [x] Step 4: Scaffold (`degit microsoft/PowerAppsCodeApps/templates/vite`, `npm install --ignore-scripts`)
-- [x] Step 5: Initialize (deferred — needs environment ID)
-- [x] Step 6: Baseline build (local only; `npx tsc -b` ✓, `npx vite build` ✓ — 421 KB JS / 18 KB CSS)
+- [x] Step 5: Initialize (`npx power-apps init -e 95b4f72c-...` ✓)
+- [x] Step 6: Baseline build (local; `npx tsc -b` ✓, `npx vite build` ✓ — 421 KB JS / 18 KB CSS)
 - [x] Step 8: Implement app
-- [ ] Step 9: Deploy to Power Platform (waiting on env-id + `npx power-apps init`)
+- [x] Step 9: Deploy to Power Platform (push succeeded → appId `2d54b7ab-...`; live at `apps.powerapps.com/play/.../2d54b7ab`)
 
 ## Implementation Map
 
@@ -50,10 +51,24 @@
 
 ## Next Steps
 
-1. **BLOCKER — env-level feature is still off.** A tenant OR env admin must open Power Platform admin center → **Manage** → **Environments** → click env `95b4f72c-7cb4-e370-a816-62d067e2de10` → **Settings** (top bar) → expand **Product** → **Features** → toggle **"Power Apps code apps"** → **Save**. This is a DIFFERENT toggle than the tenant-level "Allow users to bring apps…" setting, and it lives in a DIFFERENT place. The user may have only enabled the tenant toggle. Wait ~5 min after saving, then re-run `npx power-apps push` from `cantina-graph-os/`.
-2. **Side discovery**: if user does want to overwrite the existing "Cantina Escolar" code app (`8301863c-...`), it returns `400 AppSubtypeImmutable` because that app was created with a different template/subtype than our Vite build. Re-using that ID won't work without re-creating the env's code app shell of the right subtype.
-3. **(Optional) Dataverse persistence**: invoke `/add-dataverse` to mirror the local model to Dataverse tables and switch the store to use the generated services.
-4. **Polish**: replace straight React Flow edges with custom Sankey edge component for `finanzas`; add ELK/dagre auto-layout for `operacion` so 20+ batches don't stack manually.
+1. **(Optional) Dataverse persistence**: invoke `/add-dataverse` to mirror the local model to Dataverse tables and switch the store to use the generated services.
+2. **(Optional) SharePoint** for collaborative persistence (multiple users editing the same cantina).
+3. **Polish**: replace straight React Flow edges with custom Sankey edge component for `finanzas`; add ELK/dagre auto-layout for `operacion` so 20+ batches don't stack manually.
+4. **Redeploy loop**: `cd cantina-graph-os && npm run build && npx power-apps push`.
+
+## Verified in Production (Playwright DOM inspection of the iframe)
+
+- React Flow viewport rendered (104 CSS rules loaded, scale + translate transform applied)
+- 70 `.react-flow__node` elements in the DOM
+- Header present: "Cantina Graph OS · trazabilidad lote → receta → venta"
+- 4 mode tabs: Operación (active) · Trazabilidad · Finanzas · Forecast / Outlook
+- Quick Actions ▾, IO ▾, 🔔 1 (notification badge)
+- Sample node (prov_Coto_0) HTML has inline styles: `background: rgb(31, 41, 55); border: 2px solid rgb(245, 158, 11); border-radius: 10px;` — Coto PROVEEDOR highlighted with the orange accent
+- LocalStorage key `cantina-graph-os` persists between sessions
+
+## Console Output (Power Apps iframe)
+
+- 1 React 19 informational warning about `createElement: type is invalid` from the host page (apps.powerapps.com) — does not block our app inside the iframe. The iframe itself reports 0 errors, 0 warnings.
 
 ## Known Build Quirks (Windows PowerShell)
 

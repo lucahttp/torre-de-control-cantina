@@ -64,7 +64,7 @@ function buildLayout(
     });
 
     // Ingredients
-    data.ingredients.forEach((i, idx) => {
+    data.products.filter((p) => p.esInsumoBase).forEach((i, idx) => {
       const nodeId = mkId(`ing_${i.id}`);
       nodes.push({
         id: nodeId,
@@ -74,7 +74,7 @@ function buildLayout(
       });
       // edges batch -> ingredient
       data.batches
-        .filter((b) => b.ingredienteId === i.id)
+        .filter((b) => b.productoId === i.id)
         .forEach((b) => {
           const bNode = nodes.find((n) => n.id.startsWith("batch_") && (n.data as EntityNodeData).refId === b.id);
           if (bNode) edges.push(makeEdge(bNode.id, nodeId, "flow_physical", "#06b6d4"));
@@ -93,7 +93,7 @@ function buildLayout(
       data.recipeItems
         .filter((r) => r.productoId === p.id)
         .forEach((r) => {
-          const iNode = nodes.find((n) => n.id.startsWith("ing_") && (n.data as EntityNodeData).refId === r.ingredienteId);
+          const iNode = nodes.find((n) => n.id.startsWith("ing_") && (n.data as EntityNodeData).refId === r.componenteId);
           if (iNode) edges.push(makeEdge(iNode.id, nodeId, "flow_physical", "#8b5cf6"));
         });
     });
@@ -213,10 +213,10 @@ function collectRelated(
 
   if (type === "product") {
     data.recipeItems.filter((r) => r.productoId === id).forEach((r) => {
-      out.add(`ingredient:${r.ingredienteId}`);
+      out.add(`ingredient:${r.componenteId}`);
     });
     data.recipeItems.filter((r) => r.productoId === id).forEach((r) => {
-      data.batches.filter((b) => b.ingredienteId === r.ingredienteId).forEach((b) => {
+      data.batches.filter((b) => b.productoId === r.componenteId).forEach((b) => {
         out.add(`batch:${b.id}`);
         out.add(`provider:${b.proveedor}`);
       });
@@ -238,30 +238,30 @@ function collectRelated(
       out.add(`allocation:${a.id}`);
     });
   } else if (type === "batch") {
-    out.add(`ingredient:${data.batches.find((b) => b.id === id)?.ingredienteId ?? ""}`);
+    out.add(`ingredient:${data.batches.find((b) => b.id === id)?.productoId ?? ""}`);
     out.add(`provider:${data.batches.find((b) => b.id === id)?.proveedor ?? ""}`);
     data.allocations.filter((a) => a.batchId === id).forEach((a) => {
       out.add(`allocation:${a.id}`);
       out.add(`sale:${a.saleId}`);
     });
   } else if (type === "ingredient") {
-    data.batches.filter((b) => b.ingredienteId === id).forEach((b) => {
+    data.batches.filter((b) => b.productoId === id).forEach((b) => {
       out.add(`batch:${b.id}`);
       out.add(`provider:${b.proveedor}`);
     });
-    data.recipeItems.filter((r) => r.ingredienteId === id).forEach((r) => {
+    data.recipeItems.filter((r) => r.componenteId === id).forEach((r) => {
       out.add(`recipe:${r.productoId}`);
       out.add(`product:${r.productoId}`);
     });
   } else if (type === "provider") {
     data.batches.filter((b) => b.proveedor === id).forEach((b) => {
       out.add(`batch:${b.id}`);
-      out.add(`ingredient:${b.ingredienteId}`);
+      out.add(`ingredient:${b.productoId}`);
     });
   } else if (type === "recipe") {
     out.add(`product:${id}`);
     data.recipeItems.filter((r) => r.productoId === id).forEach((r) => {
-      out.add(`ingredient:${r.ingredienteId}`);
+      out.add(`ingredient:${r.componenteId}`);
     });
   } else if (type === "allocation") {
     const a = data.allocations.find((x) => x.id === id);

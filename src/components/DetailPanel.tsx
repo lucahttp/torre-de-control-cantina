@@ -78,7 +78,7 @@ function EntityDetail({ type, id, data }: { type: string; id: string; data: Retu
         <div style={row}><span>Activo</span><b>{p.activo ? "sí" : "no"}</b></div>
         <div style={section}>Receta</div>
         {items.map((it) => {
-          const ing = data.ingredients.find((i) => i.id === it.ingredienteId);
+          const ing = data.products.filter((p) => p.esInsumoBase).find((i) => i.id === it.componenteId);
           return <div key={it.id} style={row}><span>{ing?.nombre}</span><b>{it.cantidad} {ing?.unidadBase}</b></div>;
         })}
         <div style={section}>Ventas del día</div>
@@ -106,7 +106,7 @@ function EntityDetail({ type, id, data }: { type: string; id: string; data: Retu
         <div style={section}>Trazabilidad (allocations)</div>
         {allocs.length === 0 && <div style={{ color: "#9ca3af", fontSize: 11 }}>Sin allocations</div>}
         {allocs.map((a) => {
-          const ing = data.ingredients.find((i) => i.id === a.ingredienteId);
+          const ing = data.products.filter((p) => p.esInsumoBase).find((i) => i.id === a.ingredienteId);
           const b = data.batches.find((x) => x.id === a.batchId);
           return (
             <div key={a.id} style={row}>
@@ -121,7 +121,7 @@ function EntityDetail({ type, id, data }: { type: string; id: string; data: Retu
   if (type === "batch") {
     const b = data.batches.find((x) => x.id === id);
     if (!b) return <div>No encontrado</div>;
-    const ing = data.ingredients.find((i) => i.id === b.ingredienteId);
+    const ing = data.products.filter((p) => p.esInsumoBase).find((i) => i.id === b.productoId);
     const allocs = data.allocations.filter((a) => a.batchId === b.id);
     const sales = data.sales.filter((s) => allocs.some((a) => a.saleId === s.id));
     return (
@@ -145,9 +145,9 @@ function EntityDetail({ type, id, data }: { type: string; id: string; data: Retu
     );
   }
   if (type === "ingredient") {
-    const i = data.ingredients.find((x) => x.id === id);
+    const i = data.products.filter((p) => p.esInsumoBase).find((x) => x.id === id);
     if (!i) return <div>No encontrado</div>;
-    const batches = data.batches.filter((b) => b.ingredienteId === i.id);
+    const batches = data.batches.filter((b) => b.productoId === i.id);
     const stock = batches.reduce((s, b) => s + b.stockRestante, 0);
     return (
       <div>
@@ -187,7 +187,7 @@ function EntityDetail({ type, id, data }: { type: string; id: string; data: Retu
         <div style={row}><span>Total comprado</span><b>{fmtARS(provBatches.reduce((s, b) => s + b.costoTotal, 0))}</b></div>
         <div style={section}>Lotes</div>
         {provBatches.map((b) => (
-          <div key={b.id} style={row}><span>{b.id} · {b.ingredienteId}</span><b>{fmtARS(b.costoTotal)}</b></div>
+          <div key={b.id} style={row}><span>{b.id} · {b.productoId}</span><b>{fmtARS(b.costoTotal)}</b></div>
         ))}
       </div>
     );
